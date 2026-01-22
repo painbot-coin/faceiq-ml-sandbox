@@ -1,0 +1,25 @@
+{
+  "description": "Sample face data for arc testing. Replace with actual anonymized face data.",
+  "faces": [
+    {
+      "id": "sample-001",
+      "name": "Sample Face 1",
+      "frontImageUrl": "/images/sample-front.jpg",
+      "frontLandmarks": {
+        "leftTemple": { "x": 0.15, "y": 0.35 },
+        "hairline": { "x": 0.5, "y": 0.08 },
+        "rightTemple": { "x": 0.85, "y": 0.35 },
+        "leftCheek": { "x": 0.2, "y": 0.55 },
+        "rightCheek": { "x": 0.8, "y": 0.55 },
+        "leftTopGonion": { "x": 0.18, "y": 0.65 },
+        "rightTopGonion": { "x": 0.82, "y": 0.65 },
+        "leftBottomGonion": { "x": 0.22, "y": 0.75 },
+        "rightBottomGonion": { "x": 0.78, "y": 0.75 },
+        "chinLeft": { "x": 0.4, "y": 0.88 },
+        "chinBottom": { "x": 0.5, "y": 0.92 },
+        "chinRight": { "x": 0.6, "y": 0.88 }
+      }
+    }
+  ],
+  "note": "Landmark coordinates are normalized 0-1. Add more faces with real landmark data for meaningful testing."
+}

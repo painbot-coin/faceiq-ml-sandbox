@@ -1,0 +1,13 @@
+{
+  "name": "female_cheek_prominence_morph_1024px_40f_90q_webp",
+  "frameWidth": 1024,
+  "frameHeight": 1024,
+  "columns": 7,
+  "rows": 6,
+  "totalFrames": 40,
+  "spriteWidth": 7168,
+  "spriteHeight": 6144,
+  "format": "webp",
+  "quality": 90,
+  "createdAt": "2025-12-05T20:03:10.461Z"
+}

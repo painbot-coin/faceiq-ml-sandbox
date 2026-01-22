@@ -1,0 +1,13 @@
+{
+  "name": "male_jaw_definition_morph_1024px_40f_85q_webp",
+  "frameWidth": 1024,
+  "frameHeight": 1024,
+  "columns": 7,
+  "rows": 6,
+  "totalFrames": 40,
+  "spriteWidth": 7168,
+  "spriteHeight": 6144,
+  "format": "webp",
+  "quality": 85,
+  "createdAt": "2025-12-05T21:52:40.440Z"
+}
