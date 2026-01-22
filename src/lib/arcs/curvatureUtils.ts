@@ -2,14 +2,6 @@
  * Curvature Calculation Utilities
  * 
  * Calculate Curvature Index (CI) and Jerk metrics (f‴) for facial arcs.
- * 
- * The derivative ladder:
- * - f′(x)  = direction & steepness
- * - f″(x)  = curvature (round vs. sharp) → CI
- * - f‴(x)  = curvature volatility (smooth vs. rugged) → Jerk
- * 
- * CI is the primary metric for arc shape classification.
- * Jerk is a diagnostic metric for smoothness/roughness.
  */
 
 import { 
@@ -72,10 +64,6 @@ export function calculateCurvatureBreakdown(curvatureSamples: number[]): Curvatu
 
 /**
  * Calculate jerk breakdown (f‴ metrics) - measures smoothness/roughness
- * 
- * @param jerkSamples - Array of jerk (dκ/dt) values along the arc
- * @param tValues - Corresponding t parameter values for spike location tracking
- * @param spikeThreshold - Threshold for counting spikes (default: 2.0)
  */
 export function calculateJerkBreakdown(
   jerkSamples: number[],
@@ -86,18 +74,15 @@ export function calculateJerkBreakdown(
     return { mean: 0, max: 0, variance: 0, stdDev: 0, spikeCount: 0, spikeLocations: [] };
   }
   
-  // Use absolute values for mean jerk (we care about magnitude, not direction)
   const absJerk = jerkSamples.map(j => Math.abs(j));
   const mean = absJerk.reduce((sum, j) => sum + j, 0) / absJerk.length;
   const max = Math.max(...absJerk);
   
-  // Variance uses actual values (signed) to capture direction changes
   const signedMean = jerkSamples.reduce((sum, j) => sum + j, 0) / jerkSamples.length;
   const squaredDiffs = jerkSamples.map(j => Math.pow(j - signedMean, 2));
   const variance = squaredDiffs.reduce((sum, d) => sum + d, 0) / jerkSamples.length;
   const stdDev = Math.sqrt(variance);
   
-  // Count spikes and track locations
   const spikeLocations: number[] = [];
   for (let i = 0; i < absJerk.length; i++) {
     if (absJerk[i] > spikeThreshold) {
@@ -117,7 +102,6 @@ export function calculateJerkBreakdown(
 
 /**
  * Calculate diagnostic metrics (Max Curvature, Curvature Variance)
- * These are useful for advanced analysis to detect sharp bends and irregularity.
  * @deprecated Use calculateCurvatureBreakdown and calculateJerkBreakdown instead
  */
 export function calculateDiagnosticMetrics(
@@ -131,18 +115,12 @@ export function calculateDiagnosticMetrics(
     };
   }
   
-  // Max absolute curvature (κ max) - detect sharp bends
   const absValues = curvatureSamples.map(k => Math.abs(k));
   const maxCurvatureAbs = Math.max(...absValues);
   
-  // Mean curvature for variance calculation
   const mean = curvatureSamples.reduce((sum, k) => sum + k, 0) / curvatureSamples.length;
-  
-  // Variance = average of squared differences from mean
   const squaredDiffs = curvatureSamples.map(k => Math.pow(k - mean, 2));
   const curvatureVariance = squaredDiffs.reduce((sum, d) => sum + d, 0) / curvatureSamples.length;
-  
-  // Standard deviation
   const curvatureStdDev = Math.sqrt(curvatureVariance);
   
   return {
@@ -154,12 +132,6 @@ export function calculateDiagnosticMetrics(
 
 /**
  * Calculate all arc metrics (CI, jerk, etc.)
- * 
- * @param points - Array of through-points for the arc
- * @param handles - Bezier control handles
- * @param invertSign - Invert the curvature sign (for right-side bilateral arcs)
- * @param jerkConfig - Configuration for jerk metrics (optional)
- * @param arcId - Optional arc ID for arc-specific calibrated label thresholds
  */
 export function calculateArcMetrics(
   points: Point2D[],
@@ -170,7 +142,6 @@ export function calculateArcMetrics(
 ): ArcMetrics {
   const config = { ...DEFAULT_JERK_CONFIG, ...jerkConfig };
   
-  // Empty/invalid arc defaults
   const emptyMetrics: ArcMetrics = {
     curvatureIndex: 0,
     maxCurvature: 0,
@@ -194,14 +165,13 @@ export function calculateArcMetrics(
     return emptyMetrics;
   }
   
-  // Integrate curvature and jerk along the arc
   let arcLength = 0;
   let totalSignedCurvature = 0;
   let maxCurvature = 0;
   
   const curvatureSamples: number[] = [];
   const jerkSamples: number[] = [];
-  const tValues: number[] = []; // For tracking spike locations
+  const tValues: number[] = [];
   
   const numSegments = points.length - 1;
   const samplesPerSegment = 50;
@@ -210,7 +180,6 @@ export function calculateArcMetrics(
     const p0 = points[seg];
     const p3 = points[seg + 1];
     
-    // Find handles for this segment
     const h0 = handles.find(h => h.pointIndex === seg && h.side === 'right') || p0;
     const h1 = handles.find(h => h.pointIndex === seg + 1 && h.side === 'left') || p3;
     
@@ -218,7 +187,6 @@ export function calculateArcMetrics(
       const t1 = i / samplesPerSegment;
       const t2 = (i + 1) / samplesPerSegment;
       
-      // Global t value (0-1 across entire arc)
       const globalT = (seg + t1) / numSegments;
       
       const pt1 = cubicBezier(t1, p0, h0, h1, p3);
@@ -227,7 +195,6 @@ export function calculateArcMetrics(
       const segLen = distance(pt1, pt2);
       arcLength += segLen;
       
-      // Calculate curvature (f″)
       const kappa = getCurvatureAtSegment(t1, p0, h0, h1, p3);
       totalSignedCurvature += kappa * segLen;
       curvatureSamples.push(kappa);
@@ -236,7 +203,6 @@ export function calculateArcMetrics(
         maxCurvature = kappa;
       }
       
-      // Calculate jerk (f‴) - rate of change of curvature
       if (config.enabled) {
         const jerk = getCurvatureJerkAt(t1, p0, h0, h1, p3);
         jerkSamples.push(jerk);
@@ -245,30 +211,22 @@ export function calculateArcMetrics(
     }
   }
   
-  // Mean curvature
   const meanCurvature = arcLength > 0 ? totalSignedCurvature / arcLength : 0;
   
-  // Curvature Index: pure shape metric, independent of size
-  // Scaled to intuitive range (no chord length - we measure shape, not size)
-  // Apply sign inversion for right-side bilateral arcs so they match left-side direction
   const rawCurvatureIndex = meanCurvature * 10;
   const curvatureIndex = invertSign ? -rawCurvatureIndex : rawCurvatureIndex;
   
-  // Apply sign inversion to max curvature for consistency
   const finalMaxCurvature = invertSign ? -maxCurvature : maxCurvature;
   const arcChordRatio = arcLength / chordLength;
   
-  // Calculate curvature breakdown (f″ metrics)
   const curvature = calculateCurvatureBreakdown(
     invertSign ? curvatureSamples.map(k => -k) : curvatureSamples
   );
   
-  // Calculate jerk breakdown (f‴ metrics)
   const jerk = config.enabled 
     ? calculateJerkBreakdown(jerkSamples, tValues, config.spikeThreshold)
     : { mean: 0, max: 0, variance: 0, stdDev: 0, spikeCount: 0, spikeLocations: [] };
   
-  // Generate labels (use arc-specific thresholds if arcId provided)
   const labelResult = arcId 
     ? _getCurvatureLabelForArc(arcId, curvatureIndex)
     : { label: getCurvatureLabel(curvatureIndex), secondary: undefined };
@@ -276,7 +234,6 @@ export function calculateArcMetrics(
   const labelSecondary = labelResult.secondary;
   const smoothnessLabel = getSmoothnessLabel(jerk);
   
-  // Legacy diagnostic metrics for backwards compatibility
   const diagnostics = calculateDiagnosticMetrics(curvatureSamples);
   
   return {
@@ -294,14 +251,9 @@ export function calculateArcMetrics(
 
 /**
  * Get a human-readable label for a curvature index value (generic)
- * 
- * For arc-specific labeling with calibrated thresholds, use:
- * - getCurvatureLabelForArc(arcId, ci) from './arcThresholds'
- * 
  * @deprecated Prefer getCurvatureLabelForArc for arc-specific labeling
  */
 export function getCurvatureLabel(ci: number): string {
-  // 7-level scale (generic thresholds for uncalibrated arcs)
   if (ci < -4) return 'Very Angular';
   if (ci < -2) return 'Moderately Angular';
   if (ci < -0.5) return 'Slightly Angular';
@@ -323,14 +275,12 @@ export {
   getLabelColorClass,
   getLabelLevel,
   compareLabels,
-  // Tier constants and helpers
   PRODUCTION_ARCS,
   SILENT_COLLECTION_ARCS,
   TESTING_COMBINED_ARCS,
   isProductionArc,
   isSilentCollectionArc,
   isTestingCombinedArc,
-  // Threshold configs
   CURVATURE_LABELS,
   ARC_THRESHOLDS,
   COMBINED_ARC_THRESHOLDS,
@@ -341,7 +291,6 @@ export type { CurvatureLabel, CurvatureLabelResult, ArcThresholdConfig } from '.
  * Get a human-readable label for smoothness based on jerk metrics
  */
 export function getSmoothnessLabel(jerk: JerkBreakdown): string {
-  // Based on mean jerk and spike count
   const { mean, spikeCount } = jerk;
   
   if (spikeCount > 3) return 'Very Rugged';
@@ -358,9 +307,8 @@ export function getCombinedLabel(ci: number, jerk: JerkBreakdown): string {
   const curvatureLabel = getCurvatureLabel(ci);
   const smoothnessLabel = getSmoothnessLabel(jerk);
   
-  // Combine into descriptive phrase
   if (smoothnessLabel === 'Smooth' || smoothnessLabel === 'Normal') {
-    return curvatureLabel; // No need to mention smoothness if it's good
+    return curvatureLabel;
   }
   
   return `${curvatureLabel} (${smoothnessLabel})`;
@@ -384,4 +332,3 @@ export function formatJerkSummary(jerk: JerkBreakdown): string {
   }
   return parts.join(' | ');
 }
-

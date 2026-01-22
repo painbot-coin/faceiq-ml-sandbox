@@ -233,4 +233,3 @@ export interface CombinedArcResult {
   /** Aggregated jerk breakdown (averaged from components) */
   jerk?: JerkBreakdown;
 }
-

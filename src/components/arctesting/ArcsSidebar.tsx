@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Tag, Info, Combine, Eye, EyeOff } from 'lucide-react';
-import { ArcTestingData } from '@/app/(authenticated)/(app)/arctesting/arc-testing-client';
+import { ArcTestingData } from '@/app/arcs/arc-testing-client';
 import { 
   CombinedArcResult, 
   CombinedArcId, 
@@ -10,8 +10,8 @@ import {
   formatCI,
   BASELINE_ARC_IDS,
   COMBINED_ARC_IDS,
-} from '@/lib/analysis/arcs';
-import { ArcDisplayData, ARC_CATEGORIES } from '@/lib/analysis/arcs/combinedArcs';
+} from '@/lib/arcs';
+import { ArcDisplayData, ARC_CATEGORIES } from '@/lib/arcs/combinedArcs';
 
 interface ArcsSidebarProps {
   allArcs: ArcDisplayData[];

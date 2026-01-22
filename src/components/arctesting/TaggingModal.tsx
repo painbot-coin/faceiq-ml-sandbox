@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import { X, Tag, ChevronDown, ChevronRight, Combine } from 'lucide-react';
-import { ArcTestingData } from '@/app/(authenticated)/(app)/arctesting/arc-testing-client';
-import { ALL_ARC_DEFINITIONS, formatCI, CombinedArcId, CombinedArcResult } from '@/lib/analysis/arcs';
-import { COMBINED_ARC_NAMES } from '@/lib/analysis/arcs/combinedArcs';
+import { ArcTestingData } from '@/app/arcs/arc-testing-client';
+import { ALL_ARC_DEFINITIONS, formatCI, CombinedArcId, CombinedArcResult } from '@/lib/arcs';
+import { COMBINED_ARC_NAMES } from '@/lib/arcs/combinedArcs';
 
 interface TaggingModalProps {
   frontArcs: Record<string, ArcTestingData>;

@@ -137,79 +137,43 @@ export function isTestingCombinedArc(arcId: string): boolean {
 
 /**
  * Calibrated thresholds for baseline arcs (arcs 1-10)
- * 
- * Each arc has 6 thresholds that define 7 ranges mapping to the 7 labels:
- * - [CI < t1]      → Very Angular
- * - [t1 ≤ CI < t2] → Moderately Angular
- * - [t2 ≤ CI < t3] → Slightly Angular
- * - [t3 ≤ CI < t4] → Balanced
- * - [t4 ≤ CI < t5] → Slightly Rounded
- * - [t5 ≤ CI < t6] → Moderately Rounded
- * - [CI ≥ t6]      → Very Rounded
  */
 export const ARC_THRESHOLDS: Record<string, ArcThresholdConfig> = {
   // ==========================================================================
   // ROUNDED-BASELINE ARCS (naturally positive CI)
   // ==========================================================================
   
-  /**
-   * CHIN ARC
-   * Baseline: ~72 (all values positive, 43-95 observed range)
-   * "Angular chin" means lower positive CI, not negative
-   */
   'chin-arc': {
     thresholds: [40, 50, 60, 70, 77, 85],
     baseline: 'rounded',
     description: 'Chin is naturally rounded. Lower CI = more angular chin appearance.',
   },
   
-  /**
-   * LEFT GONION ARC
-   * Baseline: ~18 (gonions naturally curve from upper to lower jaw)
-   * CI near 0 = very angular gonion
-   * 
-   * NOTE: Gonion arcs are highly variable and sensitive to landmarking placement.
-   * They should NOT be used as standalone angularity assessments - only useful
-   * as components of combined arcs (jaw segments, full jaw contour, etc.)
-   */
   'gonion-left-arc': {
     thresholds: [0, 8, 15, 22, 32, 42],
     baseline: 'rounded',
     description: 'Gonion curvature (hidden - only used in combined arcs).',
-    hideAsIndividualAssessment: true, // Too variable on its own, only meaningful in combined arcs
+    hideAsIndividualAssessment: true,
   },
   
-  /**
-   * RIGHT GONION ARC
-   * Same thresholds as left (sign already normalized via invertCurvatureSign)
-   */
   'gonion-right-arc': {
     thresholds: [0, 8, 15, 22, 32, 42],
     baseline: 'rounded',
     description: 'Gonion curvature (hidden - only used in combined arcs).',
-    hideAsIndividualAssessment: true, // Too variable on its own, only meaningful in combined arcs
+    hideAsIndividualAssessment: true,
   },
   
   // ==========================================================================
   // STRAIGHT-BASELINE ARCS (baseline near 0)
   // ==========================================================================
   
-  /**
-   * LEFT CHEEK CONTOUR ARC
-   * Baseline: ~0 (straight cheek = angular appearance)
-   * Negative CI = hollow/concave, Positive CI = full/convex
-   */
   'cheek-left-arc': {
     thresholds: [-5, 0, 5, 10, 15, 20],
     baseline: 'straight',
-    straightRange: [0, 3], // "Straight" falls within Slightly Angular
+    straightRange: [0, 3],
     description: 'Cheeks are naturally straight. CI 0-3 = straight contour (angular appearance).',
   },
   
-  /**
-   * RIGHT CHEEK CONTOUR ARC
-   * Same thresholds as left
-   */
   'cheek-right-arc': {
     thresholds: [-5, 0, 5, 10, 15, 20],
     baseline: 'straight',
@@ -217,21 +181,13 @@ export const ARC_THRESHOLDS: Record<string, ArcThresholdConfig> = {
     description: 'Cheeks are naturally straight. CI 0-3 = straight contour (angular appearance).',
   },
   
-  /**
-   * LEFT MANDIBLE ARC
-   * Baseline: ~0 (straight mandible = angular jaw)
-   */
   'mandible-left-arc': {
     thresholds: [-4, 1, 6, 13, 22, 38],
     baseline: 'straight',
-    straightRange: [0, 5], // "Straight" falls within Slightly Angular
+    straightRange: [0, 5],
     description: 'Mandible line is naturally straight. CI 3-8 = straight line (angular jaw).',
   },
   
-  /**
-   * RIGHT MANDIBLE ARC
-   * Same thresholds as left (sign already normalized)
-   */
   'mandible-right-arc': {
     thresholds: [-4, 1, 6, 13, 22, 38],
     baseline: 'straight',
@@ -241,24 +197,14 @@ export const ARC_THRESHOLDS: Record<string, ArcThresholdConfig> = {
   
   // ==========================================================================
   // PENDING CALIBRATION (need more data)
-  // Using conservative defaults based on expected shape
   // ==========================================================================
   
-  /**
-   * HAIRLINE ARC
-   * Baseline: rounded (covers temple to temple)
-   * TODO: May need M-shape vs rounded distinction, not just CI
-   */
   'hairline-arc': {
     thresholds: [10, 25, 40, 55, 70, 85],
     baseline: 'rounded',
     description: 'Hairline shape. Pending more calibration data.',
   },
   
-  /**
-   * FOREHEAD ARC (Side Profile)
-   * Baseline: straight to slightly rounded
-   */
   'forehead-arc': {
     thresholds: [-5, 0, 5, 10, 20, 35],
     baseline: 'straight',
@@ -266,11 +212,6 @@ export const ARC_THRESHOLDS: Record<string, ArcThresholdConfig> = {
     description: 'Forehead curvature. Flat forehead vs protruding.',
   },
   
-  /**
-   * SUBMENTAL ARC (Side Profile)
-   * Baseline: rounded (covers chin-neck angle)
-   * Note: Sign may be inverted - need investigation
-   */
   'submental-arc': {
     thresholds: [-50, -30, -10, 5, 20, 40],
     baseline: 'rounded',
@@ -281,60 +222,37 @@ export const ARC_THRESHOLDS: Record<string, ArcThresholdConfig> = {
   // NOSE ARCS (Side Profile) - Testing Phase
   // ==========================================================================
   
-  /**
-   * NASAL BRIDGE ARC (Side Profile)
-   * Baseline: slightly concave to straight (typical dorsum profile)
-   * Negative CI = concave/ski-slope (often desirable)
-   * Positive CI = convex/dorsal hump
-   * Near zero = straight dorsum
-   */
   'nasal-bridge-arc': {
     thresholds: [-25, -15, -8, 0, 8, 18],
     baseline: 'straight',
-    straightRange: [-5, 5], // Straight dorsum falls within Balanced range
+    straightRange: [-5, 5],
     description: 'Nasal dorsum/bridge curvature. Negative = ski-slope, 0 = straight, Positive = hump.',
-    hideAsIndividualAssessment: true, // Testing phase
+    hideAsIndividualAssessment: true,
   },
   
-  /**
-   * NOSE TIP ARC (Side Profile)
-   * Baseline: rounded (nose tips are inherently curved)
-   * Higher CI = more rounded/bulbous tip
-   * Lower CI = more defined/refined tip
-   */
   'nose-tip-arc': {
     thresholds: [15, 25, 35, 45, 55, 70],
     baseline: 'rounded',
     description: 'Nose tip roundness. Higher CI = more rounded/bulbous, lower = more defined.',
-    hideAsIndividualAssessment: true, // Testing phase
+    hideAsIndividualAssessment: true,
   },
   
   // ==========================================================================
   // LIP ARCS (naturally positive CI - rounded baseline)
   // ==========================================================================
   
-  /**
-   * UPPER LIP ARC
-   * 2-point arc: labraleSuperius → cheilion
-   * Measures upper lip fullness/curvature in profile
-   */
   'upper-lip-arc': {
     thresholds: [5, 15, 25, 35, 45, 60],
     baseline: 'rounded',
     description: 'Upper lip curvature. Higher CI = fuller/more projected lip, lower = flatter.',
-    hideAsIndividualAssessment: true, // Testing phase - silent collection
+    hideAsIndividualAssessment: true,
   },
   
-  /**
-   * LOWER LIP ARC
-   * 2-point arc: labraleInferius → cheilion
-   * Measures lower lip fullness/curvature in profile
-   */
   'lower-lip-arc': {
     thresholds: [5, 15, 25, 35, 45, 60],
     baseline: 'rounded',
     description: 'Lower lip curvature. Higher CI = fuller/more projected lip, lower = flatter.',
-    hideAsIndividualAssessment: true, // Testing phase - silent collection
+    hideAsIndividualAssessment: true,
   },
 };
 
@@ -342,17 +260,7 @@ export const ARC_THRESHOLDS: Record<string, ArcThresholdConfig> = {
 // COMBINED ARC THRESHOLDS
 // =============================================================================
 
-/**
- * Thresholds for combined arcs (arcs 11-19)
- * 
- * Combined arcs that pass through gonion/chin are naturally rounded.
- * Their thresholds are shifted to account for this.
- */
 export const COMBINED_ARC_THRESHOLDS: Record<string, ArcThresholdConfig> = {
-  /**
-   * JAW SEGMENT A (gonion + mandible)
-   * Naturally slightly rounded due to gonion component
-   */
   'jaw-segment-a1': {
     thresholds: [-5, 5, 15, 25, 35, 50],
     baseline: 'rounded',
@@ -363,21 +271,11 @@ export const COMBINED_ARC_THRESHOLDS: Record<string, ArcThresholdConfig> = {
     baseline: 'rounded',
     description: 'Right gonion to chin corner.',
   },
-  
-  /**
-   * LOWER FACE CONTOUR (full wrap: gonion L → chin → gonion R)
-   * Naturally rounded - includes chin arc
-   */
   'lower-face-contour': {
     thresholds: [10, 25, 40, 55, 70, 85],
     baseline: 'rounded',
     description: 'Full lower face wrap from left to right gonion through chin.',
   },
-  
-  /**
-   * JAW SEGMENT B (cheek + gonion + mandible)
-   * Mix of straight (cheek) and rounded (gonion) components
-   */
   'jaw-segment-b1': {
     thresholds: [-5, 5, 15, 25, 35, 50],
     baseline: 'rounded',
@@ -388,21 +286,11 @@ export const COMBINED_ARC_THRESHOLDS: Record<string, ArcThresholdConfig> = {
     baseline: 'rounded',
     description: 'Right cheekbone to chin corner.',
   },
-  
-  /**
-   * FULL JAW CONTOUR (everything from cheek to cheek)
-   * Most comprehensive - naturally rounded
-   */
   'full-jaw-contour': {
     thresholds: [15, 30, 45, 60, 75, 90],
     baseline: 'rounded',
     description: 'Complete wrap from left cheek to right cheek.',
   },
-  
-  /**
-   * JAW SEGMENT C (cheek + gonion)
-   * Shorter segment - mix of straight and rounded
-   */
   'jaw-segment-c1': {
     thresholds: [-3, 5, 12, 20, 30, 45],
     baseline: 'rounded',
@@ -413,11 +301,6 @@ export const COMBINED_ARC_THRESHOLDS: Record<string, ArcThresholdConfig> = {
     baseline: 'rounded',
     description: 'Right cheek to gonion area.',
   },
-  
-  /**
-   * MANDIBULAR CONTOUR (mandibles + chin)
-   * Includes chin so naturally rounded
-   */
   'mandibular-contour': {
     thresholds: [20, 35, 50, 65, 80, 95],
     baseline: 'rounded',
@@ -431,17 +314,11 @@ export const COMBINED_ARC_THRESHOLDS: Record<string, ArcThresholdConfig> = {
 
 /**
  * Get the curvature label for a specific arc
- * 
- * @param arcId - The arc ID (e.g., 'chin-arc', 'cheek-left-arc')
- * @param ci - Curvature Index value
- * @returns Label result with primary label, optional secondary text, and numeric level
  */
 export function getCurvatureLabelForArc(arcId: string, ci: number): CurvatureLabelResult {
-  // Look up config in baseline or combined thresholds
   const config = ARC_THRESHOLDS[arcId] || COMBINED_ARC_THRESHOLDS[arcId];
   
   if (!config) {
-    // Fallback to generic labeling for unknown arcs
     return getGenericCurvatureLabel(ci);
   }
   
@@ -473,7 +350,6 @@ export function getCurvatureLabelForArc(arcId: string, ci: number): CurvatureLab
     level = 7;
   }
   
-  // Add "straight" secondary descriptor for straight-baseline arcs
   let secondary: string | undefined;
   if (config.baseline === 'straight' && config.straightRange) {
     const [sMin, sMax] = config.straightRange;
@@ -487,7 +363,6 @@ export function getCurvatureLabelForArc(arcId: string, ci: number): CurvatureLab
 
 /**
  * Generic fallback labeling for arcs without calibrated thresholds
- * Uses the original simple thresholds
  */
 export function getGenericCurvatureLabel(ci: number): CurvatureLabelResult {
   if (ci < -4) return { label: 'Very Angular', level: 1 };
@@ -515,7 +390,6 @@ export function hasCalibratedThresholds(arcId: string): boolean {
 
 /**
  * Check if an arc should be hidden as an individual assessment.
- * Some arcs (like gonion) are too variable on their own but useful in combined arcs.
  */
 export function shouldHideAsIndividualAssessment(arcId: string): boolean {
   const config = ARC_THRESHOLDS[arcId];
@@ -543,7 +417,6 @@ export function getArcThresholdBoundaries(arcId: string): number[] | undefined {
 
 /**
  * Get color class for a curvature label (for UI)
- * Colors match the reversed gradient: Angular = teal/cyan, Rounded = red
  */
 export function getLabelColorClass(label: CurvatureLabel): string {
   switch (label) {
@@ -571,7 +444,7 @@ export function getLabelColorClass(label: CurvatureLabel): string {
  */
 export function getLabelLevel(label: string): number {
   const index = CURVATURE_LABELS.indexOf(label as CurvatureLabel);
-  return index >= 0 ? index + 1 : 4; // Default to Balanced (4)
+  return index >= 0 ? index + 1 : 4;
 }
 
 /**
@@ -580,4 +453,3 @@ export function getLabelLevel(label: string): number {
 export function compareLabels(labelA: CurvatureLabel, labelB: CurvatureLabel): number {
   return getLabelLevel(labelA) - getLabelLevel(labelB);
 }
-

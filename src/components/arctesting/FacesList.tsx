@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { CheckCircle2, Circle, User, Star, X } from 'lucide-react';
-import { FaceData, FaceTestingState } from '@/app/(authenticated)/(app)/arctesting/arc-testing-client';
+import { FaceData, FaceTestingState } from '@/app/arcs/arc-testing-client';
 
 interface FacesListProps {
   faces: FaceData[];

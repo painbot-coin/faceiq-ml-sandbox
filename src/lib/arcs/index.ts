@@ -11,4 +11,4 @@ export * from './arcDefinitions';
 export * from './bezierUtils';
 export * from './curvatureUtils';
 export * from './combinedArcs';
-
+export * from './arcThresholds';

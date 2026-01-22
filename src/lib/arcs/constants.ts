@@ -215,5 +215,3 @@ export const COMBINED_ARC_COMPONENTS: Record<CombinedArcId, {
     invertSigns: [false, true, true],
   },
 };
-
-

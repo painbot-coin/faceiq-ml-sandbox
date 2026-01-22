@@ -11,8 +11,8 @@ import {
   IntermediatePoint,
   formatCI,
   findClosestPointOnBezier,
-} from '@/lib/analysis/arcs';
-import { ArcTestingData } from '@/app/(authenticated)/(app)/arctesting/arc-testing-client';
+} from '@/lib/arcs';
+import { ArcTestingData } from '@/app/arcs/arc-testing-client';
 
 interface ZoomState {
   scale: number;
