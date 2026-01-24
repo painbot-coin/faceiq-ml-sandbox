@@ -218,6 +218,121 @@ For this, we'll create a **sandbox branch** with:
 - Basic type definitions (Point2D, landmark schema)
 - Sample output format spec
 
-**Not included**: scoring thresholds, full landmark definitions, ratio calculations, API routes, auth, database schema.
+**Not included**: scoring thresholds, ratio calculations, API routes, auth, database schema.
 
 This gives you everything needed to train/evaluate a model without exposing core IP.
+
+---
+
+## Facial Landmark Detection Pipeline
+
+The sandbox now includes the complete landmark detection system. This is how FaceIQ detects and places facial landmarks on both front and side profile images.
+
+### Overview
+
+| Profile | Detection Method | Landmark Count | Notes |
+|---------|-----------------|----------------|-------|
+| **Front** | MediaPipe (client-side) | 468 raw → ~50 semantic | Google's ML model |
+| **Side** | AWS Lambda (server-side) | 106 raw → ~30 semantic | Custom "oasis-model" |
+
+### Front Profile Detection (MediaPipe)
+
+Uses Google's MediaPipe Face Landmarker to detect 468 facial landmarks from frontal images.
+
+```typescript
+import { detectFrontLandmarks, preloadMediaPipe } from '@/lib/landmarks';
+
+// Preload model (call early to avoid delay)
+await preloadMediaPipe();
+
+// Detect landmarks - returns pixel coordinates
+const landmarks = await detectFrontLandmarks(imageElement, canvasWidth, canvasHeight);
+// landmarks = { hairline: {x, y}, leftEyePupil: {x, y}, ... }
+```
+
+**Key files:**
+- `src/lib/landmarks/mediapipe.ts` - Detection and standardization
+- `src/lib/landmarks/definitions.ts` - Landmark metadata
+
+**MediaPipe Index Mapping:**
+```typescript
+const MEDIAPIPE_LANDMARK_MAP = {
+  'hairline': 10,
+  'leftEyePupil': 468,
+  'rightEyePupil': 473,
+  'chinBottom': 152,
+  // ... ~50 mappings total
+};
+```
+
+### Side Profile Detection (AWS Lambda)
+
+Uses our custom Lambda function "oasis-model" for side profile detection.
+
+```typescript
+import { detectSideLandmarks, computeStandardizationParams } from '@/lib/landmarks';
+
+// Server-side only (requires AWS credentials)
+const result = await detectSideLandmarks(base64Image, { width, height });
+// result = { bbox, landmarks: [{x,y}, ...], dimensions }
+
+const params = computeStandardizationParams(result);
+// params = { rotationAngle, direction, center, crop, landmarks, bbox }
+```
+
+### Side Landmark Auto-Placement
+
+The Lambda returns raw 106-point coordinates. Auto-placement maps these to semantic names.
+
+```typescript
+import { applyAutoPlacement, mirrorLandmarksHorizontally } from '@/lib/landmarks';
+
+const semanticLandmarks = applyAutoPlacement(lambdaData, width, height);
+// semanticLandmarks = { pronasale: {x, y}, nasion: {x, y}, pogonion: {x, y}, ... }
+
+// Mirror for right-facing profiles (analysis assumes left-facing)
+const mirrored = mirrorLandmarksHorizontally(semanticLandmarks);
+```
+
+**Mapping types:**
+1. **Direct mapping**: `pronasale: 83` → Lambda point 83
+2. **Computed**: `forehead: midpoint(trichion, glabella)` → derived geometrically
+3. **Dependencies**: Some landmarks depend on others being computed first
+
+### Landmark Schema
+
+**Front Profile Landmarks (~50):**
+- Eyes: pupil, medial/lateral canthus, upper/lower eyelid, crease, hood end
+- Brows: head, inner corner, arch, peak, tail
+- Nose: bridge, bottom, left/right sides
+- Mouth: corners, cupid's bow, middle, lower lip
+- Jaw: top/bottom gonion (both sides), chin points
+- Face: temples, cheeks, outer ears, neck points
+
+**Side Profile Landmarks (~30):**
+- Cranium: vertex, occiput, trichion
+- Forehead: forehead, glabella
+- Eyes: orbitale, cornealApex, eyelidEnd, lowerEyelid
+- Nose: nasion, rhinion, supratip, pronasale, infratip, columella, subnasale, subalare
+- Mouth: labraleSuperius, cheilion, labraleInferius, sublabiale
+- Chin/Jaw: pogonion, menton, gonionTop, gonionBottom
+- Ear: porion, tragus, intertragicNotch
+- Neck: cervicalPoint, neckPoint, cheekbone
+
+### Coordinate Systems
+
+All landmarks use **normalized coordinates (0-1)**:
+- `x: 0` = left edge, `x: 1` = right edge
+- `y: 0` = top edge, `y: 1` = bottom edge
+
+To convert to pixels: `pixelX = normalized.x * imageWidth`
+
+### Experimentation Ideas
+
+With landmark detection available, you could:
+
+1. **Extract facial regions** - Use landmarks to crop specific areas (eyes, nose, jaw)
+2. **Compute geometric features** - Distances, angles, ratios between landmarks
+3. **Train region-specific models** - CNN on cropped cheekbone regions for angularity
+4. **Landmark-guided attention** - Use landmarks to focus model attention
+5. **Augmentation** - Generate training variations by slight landmark perturbation
